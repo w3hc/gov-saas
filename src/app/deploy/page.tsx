@@ -22,7 +22,7 @@ export default function DeployPage() {
 
   return (
     <Container maxW="container.sm" py={20}>
-      <Text mb={4}>Hello new page!</Text>
+      <Text mb={4}>Deploy your own DAO!</Text>
     </Container>
   )
 }
