@@ -6,7 +6,7 @@ import { BrowserProvider, parseEther, formatEther } from 'ethers'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-export default function NewPage() {
+export default function DeployPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [txLink, setTxLink] = useState<string>()
   const [txHash, setTxHash] = useState<string>()
@@ -22,7 +22,7 @@ export default function NewPage() {
 
   return (
     <Container maxW="container.sm" py={20}>
-      <Text mb={4}>Hello new page!</Text>
+      <Text mb={4}>Deploy your own DAO!</Text>
     </Container>
   )
 }

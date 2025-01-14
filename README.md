@@ -1,6 +1,11 @@
-# Genji
+# Gov SaaS
 
-A Next.js Web3 app template.
+Deploy and manage your DAO.
+
+Live at:
+
+- http://gov.w3hc.org/
+- https://gov-app.netlify.app
 
 ## Install
 

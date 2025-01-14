@@ -51,9 +51,9 @@ createAppKit({
   ],
   defaultNetwork: sepolia,
   metadata: {
-    name: 'Genji',
-    description: 'Next.js + Web3 Modal + Ethers.js + Chakra UI',
-    url: 'https://genji.netlify.app',
+    name: 'Gov',
+    description: 'Deploy and manage your DAO',
+    url: 'https://gov-app.netlify.app',
     icons: ['./favicon.ico'],
   },
   enableEIP6963: true,
