@@ -43,7 +43,7 @@ export default function Header() {
       <Flex justify="space-between" align="center" px={4}>
         <Link href="/">
           <Heading as="h3" size="md" textAlign="center">
-            Genji
+            Gov
           </Heading>
         </Link>
         <Flex gap={2} align="center">
@@ -87,8 +87,8 @@ export default function Header() {
               size="sm"
             />
             <MenuList>
-              <Link href="/new" color="white">
-                <MenuItem fontSize="md">New page</MenuItem>
+              <Link href="/deploy" color="white">
+                <MenuItem fontSize="md">Deploy your DAO</MenuItem>
               </Link>
             </MenuList>
           </Menu>
