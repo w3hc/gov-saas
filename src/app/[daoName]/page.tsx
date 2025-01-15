@@ -122,30 +122,30 @@ export default function DAOPage({ params }: PageProps) {
 
         console.log('Connecting to DAO at:', dao.address)
 
-        const provider = new JsonRpcProvider('https://sepolia.optimism.io')
+        // const provider = new JsonRpcProvider('https://sepolia.optimism.io')
+        const provider = new JsonRpcProvider(
+          'https://optimism-sepolia.infura.io/v3/2cd8708d4b6546ba8ab1dceacc3c1447'
+        )
 
         // First, get the NFT contract address from the DAO
         const gov = new Contract(dao.address, DAO_ABI, provider)
 
         console.log('gov contract:', gov)
 
-        const currentBlock = await provider.getBlockNumber()
-        console.log('Current block:', currentBlock)
+        const block = daos[1].proposalCreatedBlockNumbers
 
-        const firstBlock = 21329330
-        console.log('firstBlock:', firstBlock)
+        if (!block) {
+          throw new Error('Invalid block number')
+        }
 
-        // const staticProposals = await gov.queryFilter(
-        //   'ProposalCreated' as any,
-        //   firstBlock,
-        //   currentBlock
-        // )
+        console.log('block:', block[0])
 
         const filter = 'ProposalCreated'
-        const staticProposals = await gov.queryFilter(filter, firstBlock, currentBlock)
+        const staticProposal = await gov.queryFilter(filter, block[0])
+        console.log('Static proposal:', staticProposal)
+        console.log('proposal ID:', staticProposal[0].args?.proposalId)
 
-        console.log('Static proposals:', staticProposals)
-
+        setProposals([staticProposal[0].args?.proposalId])
         console.log('Fetching proposals done')
         setIsLoadingProposals(false)
       } catch (err) {
@@ -238,11 +238,14 @@ export default function DAOPage({ params }: PageProps) {
               <Text color="red.500">{errorProposals}</Text>
             ) : (
               <VStack align="stretch" spacing={2}>
-                {proposals.map(proposalId => (
+                {/* {proposals.map(proposalId => (
                   <Text key={proposalId} fontFamily="mono" fontSize="sm">
                     {proposalId}
                   </Text>
-                ))}
+                ))} */}
+                <Text fontFamily="mono" fontSize="sm">
+                  {proposals}
+                </Text>
               </VStack>
             )}
           </Box>
