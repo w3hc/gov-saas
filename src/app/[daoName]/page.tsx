@@ -31,6 +31,7 @@ interface DAOInfo {
 
 export default function DAOPage({ params }: PageProps) {
   const [members, setMembers] = useState<string[]>([])
+  const [proposals, setProposals] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>('')
   const [nftMetadata, setNftMetadata] = useState<{
@@ -108,7 +109,31 @@ export default function DAOPage({ params }: PageProps) {
       }
     }
 
+    async function fetchProposals() {
+      try {
+        if (!dao.address || !isAddress(dao.address)) {
+          throw new Error(`Invalid DAO address: ${dao.address}`)
+        }
+
+        console.log('Connecting to DAO at:', dao.address)
+
+        const provider = new JsonRpcProvider('https://sepolia.optimism.io')
+
+        // First, get the NFT contract address from the DAO
+        const daoContract = new Contract(dao.address, DAO_ABI, provider)
+      } catch (err) {
+        console.error('Error fetching proposals:', err)
+        let errorMessage = 'Failed to fetch proposals'
+        if (err instanceof Error) {
+          errorMessage = err.message
+        }
+        setError(errorMessage)
+        setIsLoading(false)
+      }
+    }
+
     fetchMembers()
+    fetchProposals()
   }, [dao.address])
 
   return (
@@ -168,6 +193,27 @@ export default function DAOPage({ params }: PageProps) {
                 {members.map(address => (
                   <Text key={address} fontFamily="mono" fontSize="sm">
                     {address}
+                  </Text>
+                ))}
+              </VStack>
+            )}
+          </Box>
+          <Box>
+            <Text fontSize="sm" color="gray.500" fontWeight="medium" mb={2}>
+              Proposals {proposals.length > 0 && `(${proposals.length})`}
+            </Text>
+            {isLoading ? (
+              <HStack>
+                <Spinner size="sm" />
+                <Text>Loading proposals...</Text>
+              </HStack>
+            ) : error ? (
+              <Text color="red.500">{error}</Text>
+            ) : (
+              <VStack align="stretch" spacing={2}>
+                {proposals.map(proposalId => (
+                  <Text key={proposalId} fontFamily="mono" fontSize="sm">
+                    {proposalId}
                   </Text>
                 ))}
               </VStack>
