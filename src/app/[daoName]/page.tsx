@@ -6,7 +6,10 @@ import { Box, Text, Heading, VStack, Container, HStack, Tag, Spinner } from '@ch
 import { useEffect, useState } from 'react'
 import { Contract, JsonRpcProvider, isAddress } from 'ethers'
 
-const DAO_ABI = ['function token() view returns (address)']
+const DAO_ABI = [
+  'function token() view returns (address)',
+  'event ProposalCreated(uint256 proposalId, address proposer, address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, uint256 startBlock, uint256 endBlock, string description)',
+]
 
 const ERC721_ABI = [
   'function balanceOf(address owner) view returns (uint256)',
@@ -33,7 +36,9 @@ export default function DAOPage({ params }: PageProps) {
   const [members, setMembers] = useState<string[]>([])
   const [proposals, setProposals] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingProposals, setIsLoadingProposals] = useState(true)
   const [error, setError] = useState<string>('')
+  const [errorProposals, setErrorProposals] = useState<string>('')
   const [nftMetadata, setNftMetadata] = useState<{
     address?: string
     name?: string
@@ -120,15 +125,37 @@ export default function DAOPage({ params }: PageProps) {
         const provider = new JsonRpcProvider('https://sepolia.optimism.io')
 
         // First, get the NFT contract address from the DAO
-        const daoContract = new Contract(dao.address, DAO_ABI, provider)
+        const gov = new Contract(dao.address, DAO_ABI, provider)
+
+        console.log('gov contract:', gov)
+
+        const currentBlock = await provider.getBlockNumber()
+        console.log('Current block:', currentBlock)
+
+        const firstBlock = 21329330
+        console.log('firstBlock:', firstBlock)
+
+        // const staticProposals = await gov.queryFilter(
+        //   'ProposalCreated' as any,
+        //   firstBlock,
+        //   currentBlock
+        // )
+
+        const filter = 'ProposalCreated'
+        const staticProposals = await gov.queryFilter(filter, firstBlock, currentBlock)
+
+        console.log('Static proposals:', staticProposals)
+
+        console.log('Fetching proposals done')
+        setIsLoadingProposals(false)
       } catch (err) {
         console.error('Error fetching proposals:', err)
         let errorMessage = 'Failed to fetch proposals'
         if (err instanceof Error) {
           errorMessage = err.message
         }
-        setError(errorMessage)
-        setIsLoading(false)
+        setErrorProposals(errorMessage)
+        setIsLoadingProposals(false)
       }
     }
 
@@ -202,13 +229,13 @@ export default function DAOPage({ params }: PageProps) {
             <Text fontSize="sm" color="gray.500" fontWeight="medium" mb={2}>
               Proposals {proposals.length > 0 && `(${proposals.length})`}
             </Text>
-            {isLoading ? (
+            {isLoadingProposals ? (
               <HStack>
                 <Spinner size="sm" />
                 <Text>Loading proposals...</Text>
               </HStack>
-            ) : error ? (
-              <Text color="red.500">{error}</Text>
+            ) : errorProposals ? (
+              <Text color="red.500">{errorProposals}</Text>
             ) : (
               <VStack align="stretch" spacing={2}>
                 {proposals.map(proposalId => (
