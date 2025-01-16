@@ -5,7 +5,18 @@
         "networks": [
             10
         ],
-        "isCrosschain": false
+        "isCrosschain": false,
+        "proposalCreatedBlockNumbers": [
+            78544781,
+            79011244,
+            105967675,
+            107680121,
+            108476146,
+            108734152,
+            114261200,
+            118915184,
+            127731049
+        ]
     },
     {
         "name": "crosschain-gov",
