@@ -30,11 +30,19 @@ interface DAOInfo {
   address: string
   networks: number[]
   isCrosschain: boolean
+  proposalCreatedBlockNumbers?: number[]
+}
+
+interface ProposalInfo {
+  id: string
+  proposer: string
+  description: string
+  blockNumber: number
 }
 
 export default function DAOPage({ params }: PageProps) {
   const [members, setMembers] = useState<string[]>([])
-  const [proposals, setProposals] = useState<string[]>([])
+  const [proposals, setProposals] = useState<ProposalInfo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingProposals, setIsLoadingProposals] = useState(true)
   const [error, setError] = useState<string>('')
@@ -62,23 +70,15 @@ export default function DAOPage({ params }: PageProps) {
           throw new Error(`Invalid DAO address: ${dao.address}`)
         }
 
-        console.log('Connecting to DAO at:', dao.address)
-
         const provider = new JsonRpcProvider('https://sepolia.optimism.io')
-
-        // First, get the NFT contract address from the DAO
         const daoContract = new Contract(dao.address, DAO_ABI, provider)
         const nftAddress = await daoContract.token()
-        console.log('Found NFT contract at:', nftAddress)
 
         if (!nftAddress || !isAddress(nftAddress)) {
           throw new Error('Invalid NFT contract address returned from DAO')
         }
 
-        // Now connect to the NFT contract
         const nftContract = new Contract(nftAddress, ERC721_ABI, provider)
-
-        // Get NFT metadata
         const [name, symbol] = await Promise.all([nftContract.name(), nftContract.symbol()])
 
         setNftMetadata({
@@ -86,12 +86,8 @@ export default function DAOPage({ params }: PageProps) {
           name,
           symbol,
         })
-        console.log('NFT Metadata:', { name, symbol })
 
-        // Get membership data
         const totalSupply = await nftContract.totalSupply()
-        console.log('Total supply:', totalSupply.toString())
-
         const ownerPromises = []
         for (let i = 0; i < Number(totalSupply); i++) {
           ownerPromises.push(nftContract.ownerOf(i))
@@ -100,16 +96,11 @@ export default function DAOPage({ params }: PageProps) {
         const owners = await Promise.all(ownerPromises)
         const uniqueMembers = Array.from(new Set(owners))
 
-        console.log('Found', uniqueMembers.length, 'members')
         setMembers(uniqueMembers)
         setIsLoading(false)
       } catch (err) {
         console.error('Error fetching members:', err)
-        let errorMessage = 'Failed to fetch members'
-        if (err instanceof Error) {
-          errorMessage = err.message
-        }
-        setError(errorMessage)
+        setError(err instanceof Error ? err.message : 'Failed to fetch members')
         setIsLoading(false)
       }
     }
@@ -120,48 +111,50 @@ export default function DAOPage({ params }: PageProps) {
           throw new Error(`Invalid DAO address: ${dao.address}`)
         }
 
-        console.log('Connecting to DAO at:', dao.address)
+        if (!dao.proposalCreatedBlockNumbers || dao.proposalCreatedBlockNumbers.length === 0) {
+          setProposals([])
+          setIsLoadingProposals(false)
+          return
+        }
 
-        // const provider = new JsonRpcProvider('https://sepolia.optimism.io')
         const provider = new JsonRpcProvider(
           'https://optimism-sepolia.infura.io/v3/2cd8708d4b6546ba8ab1dceacc3c1447'
         )
-
-        // First, get the NFT contract address from the DAO
         const gov = new Contract(dao.address, DAO_ABI, provider)
-
-        console.log('gov contract:', gov)
-
-        const block = daos[1].proposalCreatedBlockNumbers
-
-        if (!block) {
-          throw new Error('Invalid block number')
-        }
-
-        console.log('block:', block[0])
-
         const filter = 'ProposalCreated'
-        const staticProposal = await gov.queryFilter(filter, block[0])
-        console.log('Static proposal:', staticProposal)
-        console.log('proposal ID:', staticProposal[0].args?.proposalId)
 
-        setProposals([staticProposal[0].args?.proposalId])
-        console.log('Fetching proposals done')
+        const proposalPromises = dao.proposalCreatedBlockNumbers.map(async blockNumber => {
+          const events = await gov.queryFilter(filter, blockNumber)
+          // @ts-ignore
+          if (events && events[0] && events[0].args) {
+            return {
+              // @ts-ignore
+              id: events[0].args.proposalId.toString(),
+              // @ts-ignore
+              proposer: events[0].args.proposer,
+              // @ts-ignore
+              description: events[0].args.description,
+              blockNumber: blockNumber,
+            }
+          }
+          return null
+        })
+
+        const proposalResults = await Promise.all(proposalPromises)
+        const validProposals = proposalResults.filter((p): p is ProposalInfo => p !== null)
+
+        setProposals(validProposals)
         setIsLoadingProposals(false)
       } catch (err) {
         console.error('Error fetching proposals:', err)
-        let errorMessage = 'Failed to fetch proposals'
-        if (err instanceof Error) {
-          errorMessage = err.message
-        }
-        setErrorProposals(errorMessage)
+        setErrorProposals(err instanceof Error ? err.message : 'Failed to fetch proposals')
         setIsLoadingProposals(false)
       }
     }
 
     fetchMembers()
     fetchProposals()
-  }, [dao.address])
+  }, [dao.address, dao.proposalCreatedBlockNumbers])
 
   return (
     <Container maxW="container.md" py={4}>
@@ -225,6 +218,7 @@ export default function DAOPage({ params }: PageProps) {
               </VStack>
             )}
           </Box>
+
           <Box>
             <Text fontSize="sm" color="gray.500" fontWeight="medium" mb={2}>
               Proposals {proposals.length > 0 && `(${proposals.length})`}
@@ -238,14 +232,20 @@ export default function DAOPage({ params }: PageProps) {
               <Text color="red.500">{errorProposals}</Text>
             ) : (
               <VStack align="stretch" spacing={2}>
-                {/* {proposals.map(proposalId => (
-                  <Text key={proposalId} fontFamily="mono" fontSize="sm">
-                    {proposalId}
-                  </Text>
-                ))} */}
-                <Text fontFamily="mono" fontSize="sm">
-                  {proposals}
-                </Text>
+                {proposals.map(proposal => (
+                  <Box key={proposal.id} p={3} borderWidth="1px" borderRadius="md">
+                    <Text fontFamily="mono" fontSize="sm" fontWeight="bold">
+                      ID: {proposal.id}
+                    </Text>
+                    <Text fontSize="sm">Proposer: {proposal.proposer}</Text>
+                    <Text fontSize="sm" mt={1}>
+                      Description: {proposal.description}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500" mt={1}>
+                      Block: {proposal.blockNumber}
+                    </Text>
+                  </Box>
+                ))}
               </VStack>
             )}
           </Box>
