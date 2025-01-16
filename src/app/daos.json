@@ -1,0 +1,36 @@
+[
+    {
+        "name": "w3hc",
+        "address": "0x83E2403A8b94AF988B4F4Ae9869577783b8CD216",
+        "networks": [
+            10
+        ],
+        "isCrosschain": false,
+        "proposalCreatedBlockNumbers": [
+            78544781,
+            79011244,
+            105967675,
+            107680121,
+            108476146,
+            108734152,
+            114261200,
+            118915184,
+            127731049
+        ]
+    },
+    {
+        "name": "crosschain-gov",
+        "address": "0xcf57e1760D0F969F558811007A74f4268281C4Ea",
+        "networks": [
+            11155420,
+            421614
+        ],
+        "isCrosschain": true,
+        "proposalCreatedBlockNumbers": [
+            22444708,
+            22445649,
+            22445763,
+            22576423
+        ]
+    }
+]

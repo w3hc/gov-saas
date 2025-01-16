@@ -7,6 +7,8 @@ Live at:
 - http://gov.w3hc.org/
 - https://gov-app.netlify.app
 
+Gov contracts: https://github.com/w3hc/gov
+
 ## Install
 
 ```bash
