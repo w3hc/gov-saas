@@ -63,6 +63,21 @@ export default function DAOPage({ params }: PageProps) {
 
   const dao: DAOInfo = daoInfo
 
+  const getProvider = (networkId: number) => {
+    switch (networkId) {
+      case 10: // Optimism Mainnet
+        return new JsonRpcProvider(process.env.NEXT_PUBLIC_OP_MAINNET_RPC_ENDPOINT)
+      case 11155420: // Optimism Sepolia
+        return new JsonRpcProvider(process.env.NEXT_PUBLIC_OP_SEPOLIA_RPC_ENDPOINT)
+      case 421614: // Arbitrum Sepolia
+        return new JsonRpcProvider(process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_ENDPOINT)
+      case 84532: // Base Sepolia
+        return new JsonRpcProvider(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_ENDPOINT)
+      default:
+        throw new Error(`Unsupported network ID: ${networkId}`)
+    }
+  }
+
   useEffect(() => {
     async function fetchMembers() {
       try {
@@ -70,7 +85,7 @@ export default function DAOPage({ params }: PageProps) {
           throw new Error(`Invalid DAO address: ${dao.address}`)
         }
 
-        const provider = new JsonRpcProvider('https://sepolia.optimism.io')
+        const provider = getProvider(dao.networks[0])
         const daoContract = new Contract(dao.address, DAO_ABI, provider)
         const nftAddress = await daoContract.token()
 
@@ -117,9 +132,7 @@ export default function DAOPage({ params }: PageProps) {
           return
         }
 
-        const provider = new JsonRpcProvider(
-          'https://optimism-sepolia.infura.io/v3/2cd8708d4b6546ba8ab1dceacc3c1447'
-        )
+        const provider = getProvider(dao.networks[0])
         const gov = new Contract(dao.address, DAO_ABI, provider)
         const filter = 'ProposalCreated'
 
